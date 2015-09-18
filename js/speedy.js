@@ -8,7 +8,12 @@ var SpeedyUtils = {
         if (typeof array !== "undefined" && array != null)
             return array.constructor.toString().indexOf("Array") > -1;
         return false;
-    }
+    },
+
+    // Check if an object is not undefined, not null and not blank
+    isNotNUB : function(obj) {
+        return !(typeof obj === "undefined" || obj == null || obj.length === 0);
+    },
 };
 
 var directiveBind;
@@ -94,59 +99,63 @@ function Speedy() {
     // Speedy's active directive
     self.directive = null;
 
-    self.ScopeNode = function(key) {
+    // Get selected elements from directive name and scope key
+    // Return the list of dom nodes
+    self.getSelectedElements = function(key) {
+        var elements = null;
+        var selector = "[" + self.directive.name;
+        if (SpeedyUtils.isNotNUB(key))
+            selector += "^='" + key + "'";
+        selector += "]";
 
-        self.logger.error("A supprimer et remplacer par une fonction de création de valeur pour le scope");
+        if (typeof document !== "undefined") {
+            var elements = document.querySelectorAll(selector);
+        } else {
+            self.logger.warning("getSelectedElements FAILED. document object doesn't exist !");
+        }
 
-        var value = "";
-        var key = key;
-
-        Object.defineProperty(self.scope, key, {
-            configurable: false,
-            enumerable: true,
-            set: function (v) {
-                value = v;
-                self.watcher(key);
-            },
-            get: function () {
-                return value;
-            }
-        });
+        return elements;
     };
 
+    // Initier function browse each focused element
+    self.initier = function () {
+        self.logger.info("Run initier ! Run !!");
 
-    // Init function
-    self.initier = function (elements) {
-
-        self.logger.info("Run initier ! Run !");
-
-        var elementsLength = elements.length;
-        while (elementsLength--) {
-            var element = elements[elementsLength];
-            if (element.hasAttribute(self.directive.name)) {
+        var elements = self.getSelectedElements(null);
+        if (elements != null && elements.length !== 0) {
+            var elementsLength = elements.length;
+            while (elementsLength--) {
+                var element = elements[elementsLength];
                 var elementKey = element.getAttribute(self.directive.name);
                 var scopeKey = self.getScopeRootKey(elementKey);
                 if (scopeKey)
                 {
+                    self.createScopeValue(scopeKey);
                     self.directive.init(self, scopeKey, element);
                 }
             }
+        } else {
+            self.logger.warning("initier FAILED. It seems that the html document doesn't contain selected dom node :(");
         }
     };
 
+    // Create the scope value if and only if the root key doesnt exist
+    // Keys should be something like : "test.test1"
     self.createScopeValue = function (keys) {
-        if (typeof keys === "undefined" || keys == null || keys.length === 0)
-            return null;
-
-        
+        var key = self.getScopeRootKey(keys);
+        if (key != null && self.scope[key] === undefined) {
+            self.logger.info("createScopeValue for key = '" + key + "'");
+            self.scope[key] = null;
+        }
     };
 
+    // Get the root key of a specified scope key
+    // Keys should something like : "test.test1.test2"
     self.getScopeRootKey = function (keys) {
-
-        console.warn("getScopeRootKey DEGUEU");
-
-        if (typeof keys === "undefined" || keys == null || keys.length === 0)
+        if (!SpeedyUtils.isNotNUB(keys)) {
+            self.logger.warning("getScopeRootKey FAILED for key = " + keys);
             return null;
+        }
 
         var keysArr = keys.split(".");
         var key = keysArr.length > 0 ? keysArr[0].trim() : null;
@@ -223,13 +232,9 @@ function Speedy() {
 
     self.watcher = function (key) {
 
-        var selector = "[" + self.directive.name;
-        if (key != null)
-            selector += "^='" + key;
-        selector += "']";
+        var elements = self.getSelectedElements(key);
 
-        if (typeof document !== "undefined") {
-            var elements = document.querySelectorAll(selector);
+        if (elements != null && elements.length !== 0) {
             var elementsLength = elements.length;
             while (elementsLength--) {
                 var element = elements[elementsLength];
@@ -298,10 +303,7 @@ function Speedy() {
     self.injectDirective(directiveBind);
 
     // Initiates speedy
-    if (typeof document !== "undefined") {
-        var elements = document.getElementsByTagName("*");
-        self.initier(elements);
-    }
+    self.initier();
 
     if (typeof module !== "undefined")
         module.exports = self;
