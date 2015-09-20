@@ -19,6 +19,22 @@
         list.test1 : <label sp-bind="list.test1"></label></br>
 
         test2 : <label sp-bind="list.test2"></label>
+
+        <ul>
+            <li sp-bind="list">
+                <label sp-bind="list.test1"></label> - 
+                <label sp-bind="list.test2"></label>
+            </li>
+        </ul>
+
+        <p sp-bind="list2"></p>
+
+
+
+        <p sp-bind="list3">
+            <label sp-bind="list3.test2"></label>
+        </p>
+
     </div>
 
     <script src="js/speedy.js"></script>

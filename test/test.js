@@ -3,6 +3,10 @@ var speedy = require('../js/speedy.js');
 
 describe("Speedy", function(){
 
+    before(function(){
+        speedy.conf.debug = false;
+    });
+
     describe("scope", function(){
 
         before(function(){

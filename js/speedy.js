@@ -41,19 +41,55 @@ directiveBind = {
 };
 
 function digester(speedy, value, element) {
-    var tmpNode = element.cloneNode(true);
-    var selector = "[" + speedy.directive.name + "]";
-    var elts = tmpNode.querySelectorAll(selector);
-    var binding = false;
-    for (var i = 0, j = elts.length; i < j; i++) {
-        var elt = elts[i];
-        binding = true;
-        speedy.watcher(speedy, null, elt);
+
+    if (SpeedyUtils.isArray(value)) {
+        digesterArray(speedy, value, element);
+    } else {
+        var tmpNode = element.cloneNode(true);
+        var selector = "[" + speedy.directive.name + "]";
+        var elts = tmpNode.querySelectorAll(selector);
+        var binding = false;
+        for (var i = 0, j = elts.length; i < j; i++) {
+            var elt = elts[i];
+            binding = true;
+            speedy.watcher(speedy, null, elt);
+        }
+        if (!binding) {
+            simpleDigester(speedy, value, element);
+        }
     }
-    if (!binding) {
-        simpleDigester(speedy, value, element);
+}
+
+function digesterArray(speedy, value, element) {
+
+    console.log(value);
+
+    var tmpElt = element.cloneNode(true);
+    var parent = element.parentNode;
+
+    /*while (parent != null && parent.hasChildNodes()) {
+        parent.removeChild(parent.firstChild);
+    }*/
+
+    var beforeElt;
+    for (var i = 0, j = value.length; i < j; i++) {
+        if (i === 0) {
+            tmpElt.setAttribute("sp-start", "");
+            tmpElt.removeAttribute("sp-end");
+            digester(speedy, value[i], tmpElt);
+            parent.appendChild(tmpElt);
+        } else {
+            tmpElt = tmpElt.cloneNode(true);
+            tmpElt.removeAttribute("sp-start");
+            tmpElt.removeAttribute("sp-end");
+            digester(speedy, value[i], tmpElt);
+            parent.insertBefore(tmpElt, beforeElt.nextSibling);
+        }
+        if (i + 1 === j) {
+            tmpElt.setAttribute("sp-end", "");
+        }
+        beforeElt = tmpElt;
     }
-    return tmpNode.innerHTML;
 }
 
 function simpleDigester(speedy, value, element) {
@@ -170,6 +206,8 @@ function Speedy() {
 
         console.warn("getScopeValue DEGUEU");
 
+        console.log(keys);
+
         if (typeof keys === "undefined" || keys == null || keys.length === 0)
             return null;
 
@@ -180,7 +218,7 @@ function Speedy() {
             var key = keysArr[i].trim();
             if (i === 0 && self.scope.hasOwnProperty(key)) {
                 tmp = self.scope[key];
-            } else if (i != 0 && tmp.hasOwnProperty(key)) {
+            } else if (i != 0 && tmp != null && tmp.hasOwnProperty(key)) {
                 tmp = tmp[key];
             } else {
                 tmp = null;
@@ -332,6 +370,29 @@ speedy.setScopeValue("list", {
         test3 : "test3value"
     }
 });
+
+
+speedy.setScopeValue("list2", [1,2,3,4,5,6]);
+
+speedy.setScopeValue("list3", [{
+    test1 : 1,
+    test2 : "41"
+},{
+    test1 : 2,
+    test2 : "42"
+},{
+    test1 : 3,
+    test2 : "43"
+},{
+    test1 : 4,
+    test2 : "44"
+},{
+    test1 : 5,
+    test2 : "45"
+},{
+    test1 : 6,
+    test2 : "46"
+}]);
 
 function test() {
     var randomnumber=Math.floor(Math.random()*10);
